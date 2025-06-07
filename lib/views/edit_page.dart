@@ -1,10 +1,11 @@
 import 'dart:io';
+import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get/get.dart';
+import 'package:busfa_app/utils/lottie_toast.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({Key? key}) : super(key: key);
@@ -60,11 +61,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
       const maxSize = 2000000;
 
       if (bytes > maxSize) {
-        Get.snackbar(
-          'Ukuran Gambar Terlalu Besar',
-          'Maksimal ukuran gambar adalah 2 MB.',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
+        showLottieToast(
+          context: context,
+          success: false,
+          message: 'Maksimal ukuran gambar adalah 2 MB.',
         );
         return;
       }
@@ -92,34 +92,106 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    String? photoUrl = _photoUrl;
-    if (_imageFile != null) {
-      photoUrl = await _uploadImage(_imageFile!);
-    }
+    try {
+      String? photoUrl = _photoUrl;
+      if (_imageFile != null) {
+        photoUrl = await _uploadImage(_imageFile!);
+      }
 
-    await FirebaseFirestore.instance
-        .collection('alumniVerified')
-        .doc(user.uid)
-        .update({
-          'name': _nameController.text.trim(),
-          'address': _addressController.text.trim(),
-          'phone': _phoneController.text.trim(),
-          'job': _jobController.text.trim(),
-          'photoUrl': photoUrl,
-        });
-    setState(() => _isLoading = false);
-    Get.back();
-    Get.snackbar(
-      'Berhasil',
-      'Profil berhasil diperbarui',
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.TOP,
-      margin: EdgeInsets.all(20),
-      borderRadius: 12,
-      icon: Icon(Icons.check_circle, color: Colors.white),
-    );
+      await FirebaseFirestore.instance
+          .collection('alumniVerified')
+          .doc(user.uid)
+          .update({
+            'name': _nameController.text.trim(),
+            'address': _addressController.text.trim(),
+            'phone': _phoneController.text.trim(),
+            'job': _jobController.text.trim(),
+            'photoUrl': photoUrl,
+          });
+
+      showLottieToast(
+        context: context,
+        success: true,
+        message: 'Profil berhasil diperbarui',
+      );
+      // Kembali ke halaman sebelumnya setelah delay toast selesai
+      Future.delayed(Duration(seconds: 3), () {
+        if (mounted) Get.back();
+      });
+    } catch (e) {
+      showLottieToast(
+        context: context,
+        success: false,
+        message: 'Terjadi kesalahan, coba lagi',
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
+
+  /// Helper method menampilkan toast Lottie di tengah layar
+  // void _showLottieToast({required bool success, required String message}) {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (context) {
+  //       return Center(
+  //         child: Container(
+  //           width: 250,
+  //           padding: const EdgeInsets.symmetric(
+  //             horizontal: 16.0,
+  //             vertical: 20.0,
+  //           ),
+  //           decoration: BoxDecoration(
+  //             color: success ? Colors.green : Colors.red,
+  //             borderRadius: BorderRadius.circular(20.0),
+  //             boxShadow: [
+  //               BoxShadow(
+  //                 color: Colors.black26,
+  //                 blurRadius: 6,
+  //                 offset: Offset(0, 3),
+  //               ),
+  //             ],
+  //           ),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               Text(
+  //                 message,
+  //                 style: const TextStyle(
+  //                   color: Colors.white,
+  //                   fontSize: 16,
+  //                   fontWeight: FontWeight.w600,
+  //                   decoration: TextDecoration.none,
+  //                 ),
+  //                 textAlign: TextAlign.center,
+  //               ),
+  //               const SizedBox(height: 12),
+  //               if (success)
+  //                 SizedBox(
+  //                   height: 70,
+  //                   child: Lottie.asset(
+  //                     'assets/lottie/success.json',
+  //                     repeat: false,
+  //                   ),
+  //                 )
+  //               else
+  //                 const Icon(
+  //                   Icons.error_outline,
+  //                   color: Colors.white,
+  //                   size: 48,
+  //                 ),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+
+  //   Future.delayed(const Duration(seconds: 3), () {
+  //     if (Navigator.canPop(context)) Navigator.pop(context);
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -286,19 +358,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
               // Save Button
               AnimatedContainer(
                 duration: Duration(milliseconds: 300),
-                height: 50,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                height: 48,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue, // <-- Ubah ke warna biru
-                    elevation: 0,
+                    backgroundColor: _isLoading ? Colors.grey : Colors.blue,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child:
                       _isLoading
@@ -311,11 +378,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             ),
                           )
                           : const Text(
-                            'Simpan Perubahan',
+                            'Simpan',
                             style: TextStyle(
-                              color: Colors.white,
                               fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                 ),
@@ -331,36 +397,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required TextEditingController controller,
     required String label,
     required IconData icon,
-    required String? Function(String?)? validator,
-    TextInputType? keyboardType,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.grey.shade600),
-
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: Theme.of(context).primaryColor,
-            width: 2,
-          ),
-        ),
-        prefixIcon: Icon(icon, color: Colors.grey.shade600),
-        filled: true,
-        fillColor: Colors.grey.shade50,
-      ),
       validator: validator,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon),
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 12,
+          horizontal: 16,
+        ),
+      ),
     );
   }
 }

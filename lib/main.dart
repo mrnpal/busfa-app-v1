@@ -8,6 +8,7 @@ import 'package:busfa_app/views/auth/sign_up.dart';
 import 'package:busfa_app/views/edit_page.dart';
 import 'package:busfa_app/views/group_chat_page.dart';
 import 'package:busfa_app/views/job_page.dart';
+import 'package:busfa_app/views/notifications_page.dart';
 import 'package:busfa_app/views/profil.dart';
 import 'package:busfa_app/views/splash.dart';
 import 'package:busfa_app/views/home_page.dart';
@@ -99,11 +100,12 @@ class _MyAppState extends State<MyApp> {
       print('Izin notifikasi diberikan');
       _saveTokenToFirestore();
 
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
         RemoteNotification? notification = message.notification;
         AndroidNotification? android = message.notification?.android;
 
         if (notification != null && android != null) {
+          // Tampilkan notifikasi lokal
           flutterLocalNotificationsPlugin.show(
             notification.hashCode,
             notification.title,
@@ -116,8 +118,20 @@ class _MyAppState extends State<MyApp> {
                 icon: '@mipmap/ic_launcher',
               ),
             ),
-            payload: message.data['screen'], // ⬅️ untuk navigasi on tap
+            payload: message.data['screen'],
           );
+
+          // Simpan notifikasi ke Firestore
+          final user = FirebaseAuth.instance.currentUser;
+          if (user != null) {
+            await FirebaseFirestore.instance.collection('notifications').add({
+              'title': notification.title,
+              'body': notification.body,
+              'timestamp': FieldValue.serverTimestamp(),
+              'uid': user.uid,
+              'screen': message.data['screen'] ?? '',
+            });
+          }
         }
       });
     } else {
@@ -181,6 +195,7 @@ class _MyAppState extends State<MyApp> {
         GetPage(name: '/group-chat', page: () => GroupChatPage()),
         GetPage(name: '/forgot-pw', page: () => ForgetPasswordPage()),
         GetPage(name: '/edit-profile', page: () => EditProfilePage()),
+        GetPage(name: '/notifications', page: () => NotificationPage()),
       ],
     );
   }

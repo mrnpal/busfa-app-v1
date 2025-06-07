@@ -49,6 +49,9 @@
 	<string>Aplikasi ini membutuhkan akses lokasi saat digunakan untuk menampilkan lokasi pengguna di peta.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Aplikasi ini membutuhkan akses lokasi selalu untuk fitur lokasi yang berjalan di latar belakang.</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+		<false/>
+
 
 </dict>
 </plist>

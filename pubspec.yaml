@@ -59,6 +59,8 @@ dependencies:
   firebase_messaging: ^15.2.5
   cached_network_image: ^3.4.1
   flutter_local_notifications: ^19.2.1
+  lottie: ^3.3.1
+  fluttertoast: ^8.2.12
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -91,6 +93,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - assets/lottie/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:busfa_app/utils/lottie_toast.dart';
 
 class AddJobPage extends StatefulWidget {
   @override
@@ -25,6 +27,8 @@ class _AddJobPageState extends State<AddJobPage> {
   DateTime? _postedDate;
   DateTime? _deadline;
   String? _salary;
+  String? _phoneContact;
+  String? _emailContact;
 
   final List<String> _jobTypes = [
     'Full-time',
@@ -71,7 +75,6 @@ class _AddJobPageState extends State<AddJobPage> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      // Collect requirements from all text fields
       _requirements =
           _requirementControllers
               .where((controller) => controller.text.isNotEmpty)
@@ -89,17 +92,23 @@ class _AddJobPageState extends State<AddJobPage> {
         'postedDate': _postedDate ?? DateTime.now(),
         'deadline': _deadline,
         'salary': _salary,
+        'phoneContact': _phoneContact,
+        'emailContact': _emailContact,
       };
 
       try {
-        // Simpan ke Firestore
         await FirebaseFirestore.instance.collection('jobs').add(newJob);
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Job posted successfully!')));
+        // Pakai showLottieToast untuk sukses
+        showLottieToast(
+          context: context,
+          message: 'Pekerjaan berhasil di posting!',
+          success: true,
+        );
+        Future.delayed(Duration(seconds: 3), () {
+          if (mounted) Get.back();
+        });
 
-        // Clear the form after submission
         _formKey.currentState!.reset();
         setState(() {
           _requirementControllers.clear();
@@ -108,9 +117,13 @@ class _AddJobPageState extends State<AddJobPage> {
           _deadline = null;
         });
       } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to post job: $e')));
+        // Pakai showLottieToast untuk error
+        showLottieToast(
+          context: context,
+          message: 'Gagal memposting pekerjaan: $e',
+
+          success: false,
+        );
       }
     }
   }
@@ -149,6 +162,11 @@ class _AddJobPageState extends State<AddJobPage> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
+                      Text(
+                        'Informasi Lowongan Kerja',
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      SizedBox(height: 12),
                       _buildTextField(
                         label: 'Nama Lowongan Kerja*',
                         onSaved: (val) => _title = val!,
@@ -207,7 +225,6 @@ class _AddJobPageState extends State<AddJobPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Persyaratan', style: theme.textTheme.titleMedium),
                       SizedBox(height: 12),
@@ -265,6 +282,10 @@ class _AddJobPageState extends State<AddJobPage> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
+                      Text(
+                        'Tanggal Posting & Deadline',
+                        style: theme.textTheme.titleMedium,
+                      ),
                       _buildDateTile(
                         context,
                         label:
@@ -305,6 +326,36 @@ class _AddJobPageState extends State<AddJobPage> {
                           FilteringTextInputFormatter.digitsOnly,
                         ],
                         onSaved: (val) => _salary = val,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Kontak Perusahaan',
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      SizedBox(height: 12),
+                      _buildTextField(
+                        label: 'Nomor Telpon/WA*',
+                        onSaved: (val) => _phoneContact = val!,
+                        validator: _requiredValidator,
+                      ),
+                      SizedBox(height: 12),
+                      _buildTextField(
+                        label: 'Email*',
+                        onSaved: (val) => _emailContact = val!,
+                        validator: _requiredValidator,
                       ),
                     ],
                   ),
