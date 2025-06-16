@@ -53,5 +53,7 @@ Firebase Cloud Functions
 Aplikasi ini dikembangkan sebagai bagian dari penelitian skripsi:
 
 Judul: Pengembangan Aplikasi Manajemen Alumni Berbasis Mobile dengan Metode Extreme Programming pada Pondok Pesantren Bustanul Faizin
+
 Pengembang: Muhammad Naufal
+
 Tahun: 2025
