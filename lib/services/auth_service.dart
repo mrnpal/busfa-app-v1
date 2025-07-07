@@ -19,7 +19,7 @@ Future<String> registerAlumni({
 
     final uid = credential.user!.uid;
 
-    await FirebaseFirestore.instance.collection('pendingAlumni').doc(uid).set({
+    await FirebaseFirestore.instance.collection('pendingUsers').doc(uid).set({
       'uid': uid,
       'email': email,
       'name': name,
@@ -49,10 +49,7 @@ Future<String?> loginAlumni(String email, String password) async {
 
     // mengecek apakah alumni sudah diverifikasi oleh admin
     final doc =
-        await FirebaseFirestore.instance
-            .collection('alumniVerified')
-            .doc(uid)
-            .get();
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
     if (!doc.exists || doc.data()?['isVerified'] != true) {
       await FirebaseAuth.instance.signOut();

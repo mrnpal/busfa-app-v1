@@ -27,7 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (user != null) {
       final snapshot =
           await FirebaseFirestore.instance
-              .collection('alumniVerified')
+              .collection('users')
               .doc(user.uid)
               .get();
 

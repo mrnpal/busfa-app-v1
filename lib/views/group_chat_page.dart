@@ -54,10 +54,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
 
     final uid = user!.uid;
     final nameSnapshot =
-        await FirebaseFirestore.instance
-            .collection('alumniVerified')
-            .doc(uid)
-            .get();
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
     final name =
         nameSnapshot.exists
             ? (nameSnapshot.data()?['name'] ?? 'Alumni')
@@ -77,10 +74,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
     if (uid == null) return;
 
     final doc =
-        await FirebaseFirestore.instance
-            .collection('alumniVerified')
-            .doc(uid)
-            .get();
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
     final name = doc.exists ? (doc.data()?['name'] ?? 'Alumni') : 'Alumni';
     final photoUrl = doc.data()?['photoUrl'] ?? null;

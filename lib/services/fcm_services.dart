@@ -15,10 +15,9 @@ class FCMService {
 
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
-        await FirebaseFirestore.instance
-            .collection('alumniVerified')
-            .doc(user.uid)
-            .set({'fcmToken': token}, SetOptions(merge: true));
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'fcmToken': token,
+        }, SetOptions(merge: true));
         print('FCM token disimpan: $token');
       }
     } catch (e) {
@@ -32,7 +31,7 @@ class FCMService {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         await FirebaseFirestore.instance
-            .collection('alumniVerified')
+            .collection('users')
             .doc(user.uid)
             .update({'fcmToken': newToken});
         print('Token FCM diperbarui: $newToken');

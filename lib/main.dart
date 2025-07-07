@@ -163,12 +163,11 @@ class _MyAppState extends State<MyApp> {
       String? token = await FirebaseMessaging.instance.getToken();
 
       if (token != null) {
-        await FirebaseFirestore.instance
-            .collection('alumniVerified')
-            .doc(user.uid)
-            .set({'fcmToken': token}, SetOptions(merge: true));
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'fcmToken': token,
+        }, SetOptions(merge: true));
 
-        print('Token FCM berhasil disimpan di alumniVerified: $token');
+        print('Token FCM berhasil disimpan di users: $token');
       }
     } catch (e) {
       print('Error menyimpan token FCM: $e');

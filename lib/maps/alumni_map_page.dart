@@ -29,8 +29,7 @@ class _AlumniMapPageState extends State<AlumniMapPage> {
   }
 
   Future<void> _loadAlumniLocations() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('alumniVerified').get();
+    final snapshot = await FirebaseFirestore.instance.collection('users').get();
 
     Set<Marker> loadedMarkers = {};
     List<Map<String, dynamic>> alumniList = [];

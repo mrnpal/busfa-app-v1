@@ -36,7 +36,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (user == null) return;
     final doc =
         await FirebaseFirestore.instance
-            .collection('alumniVerified')
+            .collection('users')
             .doc(user.uid)
             .get();
     if (doc.exists) {
@@ -99,7 +99,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
 
       await FirebaseFirestore.instance
-          .collection('alumniVerified')
+          .collection('users')
           .doc(user.uid)
           .update({
             'name': _nameController.text.trim(),

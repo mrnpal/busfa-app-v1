@@ -48,7 +48,7 @@ class _HomePageState extends State<HomePage> {
     if (user != null) {
       final snapshot =
           await FirebaseFirestore.instance
-              .collection('alumniVerified')
+              .collection('users')
               .doc(user.uid)
               .get();
       if (snapshot.exists) {
@@ -59,8 +59,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<int> _getAlumniCount() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('alumniVerified').get();
+    final snapshot = await FirebaseFirestore.instance.collection('users').get();
     return snapshot.size;
   }
 
@@ -92,7 +91,7 @@ class _HomePageState extends State<HomePage> {
       future:
           user != null
               ? FirebaseFirestore.instance
-                  .collection('alumniVerified')
+                  .collection('users')
                   .doc(user.uid)
                   .get()
               : null,
