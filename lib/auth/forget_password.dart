@@ -11,22 +11,29 @@ class ForgetPasswordPage extends StatefulWidget {
 }
 
 class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
+  // Controller untuk input email
   final TextEditingController _emailController = TextEditingController();
+  // Status loading saat proses reset password
   bool _isLoading = false;
+  // Key untuk validasi form
   final _formKey = GlobalKey<FormState>();
 
+  /// Fungsi untuk mengirim link reset password ke email
   Future<void> _resetPassword() async {
+    // Validasi form
     if (!_formKey.currentState!.validate()) return;
 
     final email = _emailController.text.trim();
     setState(() => _isLoading = true);
 
     try {
+      // Kirim email reset password
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       showLottieToast(
         context: context,
         success: true,
-        message: 'Link reset password telah dikirim ke email Anda',
+        message:
+            'Link reset password telah dikirim ke email Anda. Periksa juga folder Spam atau Promosi.',
       );
       _emailController.clear();
     } finally {

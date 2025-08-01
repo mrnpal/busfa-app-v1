@@ -18,8 +18,6 @@ class _AlumniMapPageState extends State<AlumniMapPage> {
   final Set<Marker> _markers = {};
   List<Map<String, dynamic>> _alumniList = [];
   LatLng _initialPosition = const LatLng(-7.7501649, 113.7007051);
-
-  // Satu field pencarian
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -30,13 +28,10 @@ class _AlumniMapPageState extends State<AlumniMapPage> {
 
   Future<void> _loadAlumniLocations() async {
     final snapshot = await FirebaseFirestore.instance.collection('users').get();
-
-    Set<Marker> loadedMarkers = {};
     List<Map<String, dynamic>> alumniList = [];
 
     for (var doc in snapshot.docs) {
       final data = doc.data();
-
       double? lat;
       double? lng;
 
@@ -72,14 +67,10 @@ class _AlumniMapPageState extends State<AlumniMapPage> {
       }
     }
 
-    if (loadedMarkers.isNotEmpty) {
-      setState(() {
-        _alumniList = alumniList;
-        _markers.clear();
-        _markers.addAll(loadedMarkers);
-        _initialPosition = loadedMarkers.first.position;
-      });
-    }
+    // Set alumni list setelah data diambil
+    setState(() {
+      _alumniList = alumniList;
+    });
   }
 
   Future<BitmapDescriptor> _getMarkerFromUrl(String url) async {
@@ -94,14 +85,12 @@ class _AlumniMapPageState extends State<AlumniMapPage> {
       final ui.FrameInfo fi = await codec.getNextFrame();
       final ui.Image image = fi.image;
 
-      // Buat gambar bulat
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final Canvas canvas = Canvas(recorder);
       final double size = 100;
       final Paint paint = Paint();
       final Rect rect = Rect.fromLTWH(0, 0, size, size);
 
-      // Clip lingkaran
       canvas.drawCircle(
         Offset(size / 2, size / 2),
         size / 2,
@@ -120,7 +109,6 @@ class _AlumniMapPageState extends State<AlumniMapPage> {
 
       return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
     } catch (e) {
-      // Jika gagal, fallback ke marker default
       return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
     }
   }
@@ -141,27 +129,47 @@ class _AlumniMapPageState extends State<AlumniMapPage> {
     return BitmapDescriptor.fromBytes(resized!.buffer.asUint8List());
   }
 
-  void _filterMarkers() {
+  Future<void> _filterMarkers() async {
     String query = _searchController.text.trim().toLowerCase();
 
-    final filtered =
-        _alumniList.where((alumni) {
-          final alumniName = (alumni['name'] ?? '').toString().toLowerCase();
-          final alumniYear = (alumni['graduationYear'] ?? '').toString();
-          return query.isEmpty ||
-              alumniName.contains(query) ||
-              alumniYear == query;
-        }).toList();
+    List<Map<String, dynamic>> filtered;
+    if (query.isEmpty) {
+      filtered = List<Map<String, dynamic>>.from(_alumniList);
+    } else {
+      filtered =
+          _alumniList.where((alumni) {
+            final alumniName =
+                (alumni['name'] ?? '').toString().toLowerCase().trim();
+            final alumniYear =
+                (alumni['graduationYear'] ?? '')
+                    .toString()
+                    .toLowerCase()
+                    .trim();
+            return alumniName.contains(query) || alumniYear.contains(query);
+          }).toList();
+    }
 
     Set<Marker> filteredMarkers = {};
     for (var alumni in filtered) {
-      filteredMarkers.add(
-        Marker(
-          markerId: MarkerId(alumni['docId']),
-          position: LatLng(alumni['lat'], alumni['lng']),
-          onTap: () => _showAlumniDetail(alumni),
-        ),
-      );
+      final lat = alumni['lat'];
+      final lng = alumni['lng'];
+      if (lat is double && lng is double) {
+        final photoUrl = alumni['photoUrl'] ?? alumni['profilePictureUrl'];
+        BitmapDescriptor icon;
+        if (photoUrl != null && photoUrl != "") {
+          icon = await _getMarkerFromUrl(photoUrl);
+        } else {
+          icon = await _getDefaultMarkerAsset();
+        }
+        filteredMarkers.add(
+          Marker(
+            markerId: MarkerId(alumni['docId']),
+            position: LatLng(lat, lng),
+            icon: icon,
+            onTap: () => _showAlumniDetail(alumni),
+          ),
+        );
+      }
     }
 
     setState(() {
@@ -173,7 +181,6 @@ class _AlumniMapPageState extends State<AlumniMapPage> {
       }
     });
 
-    // Jika hanya satu hasil, pindahkan kamera ke marker tersebut
     if (filtered.length == 1) {
       final alumni = filtered.first;
       _mapController.animateCamera(
@@ -181,7 +188,6 @@ class _AlumniMapPageState extends State<AlumniMapPage> {
       );
     }
 
-    // Jika tidak ada hasil, tampilkan info
     if (filtered.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -213,8 +219,6 @@ class _AlumniMapPageState extends State<AlumniMapPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (photo != null)
                       CircleAvatar(
@@ -224,11 +228,10 @@ class _AlumniMapPageState extends State<AlumniMapPage> {
                     else
                       const CircleAvatar(radius: 40, child: Icon(Icons.person)),
                     const SizedBox(width: 16),
-
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             name,
@@ -255,7 +258,7 @@ class _AlumniMapPageState extends State<AlumniMapPage> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'Graduated $year',
+                                'Tahun Lulus $year',
                                 style: TextStyle(color: Colors.grey.shade600),
                               ),
                             ],
@@ -291,7 +294,6 @@ class _AlumniMapPageState extends State<AlumniMapPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Google Map
           Positioned.fill(
             child: GoogleMap(
               initialCameraPosition: CameraPosition(
@@ -302,7 +304,6 @@ class _AlumniMapPageState extends State<AlumniMapPage> {
               onMapCreated: (controller) => _mapController = controller,
             ),
           ),
-          //Pencarian
           Positioned(
             top: 70,
             left: 16,

@@ -2,9 +2,9 @@ import 'package:busfa_app/maps/alumni_map_page.dart';
 import 'package:busfa_app/views/activity_detail_page.dart';
 import 'package:busfa_app/views/activity_page.dart';
 import 'package:busfa_app/views/add_job_page.dart';
-import 'package:busfa_app/views/auth/forget_password.dart';
-import 'package:busfa_app/views/auth/login_page.dart';
-import 'package:busfa_app/views/auth/sign_up.dart';
+import 'package:busfa_app/auth/forget_password.dart';
+import 'package:busfa_app/auth/login_page.dart';
+import 'package:busfa_app/auth/sign_up.dart';
 import 'package:busfa_app/views/edit_page.dart';
 import 'package:busfa_app/views/group_chat_page.dart';
 import 'package:busfa_app/views/job_page.dart';
@@ -21,6 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 
+// Handler background untuk pesan FCM ketika aplikasi tidak aktif
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -37,6 +38,7 @@ final AndroidNotificationChannel channel = AndroidNotificationChannel(
   importance: Importance.high,
 );
 
+// Entry point utama aplikasi, inisialisasi Firebase, notifikasi, dan jalankan app
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -51,8 +53,11 @@ void main() async {
 
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
+  const DarwinInitializationSettings initializationSettingsIOS =
+      DarwinInitializationSettings();
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
+    iOS: initializationSettingsIOS,
   );
 
   await flutterLocalNotificationsPlugin.initialize(
@@ -70,12 +75,15 @@ void main() async {
   runApp(MyApp());
 }
 
+// Widget root aplikasi, mengatur routing dan inisialisasi FCM
 class MyApp extends StatefulWidget {
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
+// State utama aplikasi, handle FCM, notifikasi, dan routing
 class _MyAppState extends State<MyApp> {
+  // Inisialisasi listener FCM dan cek pesan awal saat app dibuka
   @override
   void initState() {
     super.initState();
@@ -92,6 +100,7 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  // Setup FCM, permission notifikasi, dan listener pesan masuk
   Future<void> _setupFCM() async {
     NotificationSettings settings =
         await FirebaseMessaging.instance.requestPermission();
@@ -139,6 +148,7 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  // Fungsi ketika app dibuka dari notifikasi, arahkan ke screen sesuai payload
   Future<void> _checkInitialMessage() async {
     RemoteMessage? initialMessage =
         await FirebaseMessaging.instance.getInitialMessage();
@@ -152,6 +162,7 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  // Simpan token FCM user ke Firestore agar bisa dikirimi notifikasi
   Future<void> _saveTokenToFirestore() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -160,7 +171,23 @@ class _MyAppState extends State<MyApp> {
         return;
       }
 
-      String? token = await FirebaseMessaging.instance.getToken();
+      String? token;
+      if (Theme.of(Get.context!).platform == TargetPlatform.iOS) {
+        // Tunggu APNS token tersedia
+        String? apnsToken;
+        int retry = 0;
+        do {
+          apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+          if (apnsToken == null)
+            await Future.delayed(const Duration(milliseconds: 500));
+          retry++;
+        } while (apnsToken == null && retry < 10);
+        if (apnsToken == null) {
+          print('APNS token belum tersedia, token FCM tidak disimpan');
+          return;
+        }
+      }
+      token = await FirebaseMessaging.instance.getToken();
 
       if (token != null) {
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
@@ -174,6 +201,7 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  // Build root aplikasi dengan GetMaterialApp dan routing
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(

@@ -1,4 +1,5 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:busfa_app/views/welcome_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '/services/auth_service.dart';
@@ -79,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
         elevation: 0,
         backgroundColor: Colors.white,
         leading: IconButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Get.to(WelcomePage()),
           icon: Icon(Icons.arrow_back_ios, size: 20, color: Colors.black),
         ),
       ),

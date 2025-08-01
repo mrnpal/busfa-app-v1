@@ -6,6 +6,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:busfa_app/utils/lottie_toast.dart';
+import 'package:busfa_app/maps/map_picker_page.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({Key? key}) : super(key: key);
@@ -21,9 +23,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _phoneController = TextEditingController();
   final _jobController = TextEditingController();
 
+  final _graduationYearController = TextEditingController();
+  final _parentNameController = TextEditingController();
+  final _dateEntryController = TextEditingController();
+  final _educationController = TextEditingController();
+  final _birthPlaceDateController = TextEditingController();
+  final _indukNumberController = TextEditingController();
+
   bool _isLoading = false;
   File? _imageFile;
   String? _photoUrl;
+  LatLng? selectedLocation;
 
   @override
   void initState() {
@@ -45,7 +55,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _addressController.text = data['address'] ?? '';
       _phoneController.text = data['phone'] ?? '';
       _jobController.text = data['job'] ?? '';
+      _graduationYearController.text = data['graduationYear'] ?? '';
+      _parentNameController.text = data['parentName'] ?? '';
+      _dateEntryController.text = data['dateEntry'] ?? '';
+      _educationController.text = data['education'] ?? '';
+      _birthPlaceDateController.text = data['birthPlaceDate'] ?? '';
+      _indukNumberController.text = data['indukNumber'] ?? '';
       _photoUrl = data['photoUrl'];
+
       setState(() {});
     }
   }
@@ -86,6 +103,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return await ref.getDownloadURL();
   }
 
+  Future<void> _selectLocationFromMap() async {
+    final location = await Navigator.push<LatLng>(
+      this.context,
+      MaterialPageRoute(
+        builder: (_) => MapPickerPage(),
+        fullscreenDialog: true,
+      ),
+    );
+    if (location != null) {
+      setState(() {
+        selectedLocation = location;
+      });
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
@@ -98,16 +130,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
         photoUrl = await _uploadImage(_imageFile!);
       }
 
+      final Map<String, dynamic> updateData = {
+        'name': _nameController.text.trim(),
+        'address': _addressController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'job': _jobController.text.trim(),
+        'graduationYear': _graduationYearController.text.trim(),
+        'parentName': _parentNameController.text.trim(),
+        'dateEntry': _dateEntryController.text.trim(),
+        'education': _educationController.text.trim(),
+        'birthPlaceDate': _birthPlaceDateController.text.trim(),
+        'indukNumber': _indukNumberController.text.trim(),
+        'photoUrl': photoUrl,
+      };
+      if (selectedLocation != null) {
+        updateData['latitude'] = selectedLocation!.latitude;
+        updateData['longitude'] = selectedLocation!.longitude;
+      }
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
-          .update({
-            'name': _nameController.text.trim(),
-            'address': _addressController.text.trim(),
-            'phone': _phoneController.text.trim(),
-            'job': _jobController.text.trim(),
-            'photoUrl': photoUrl,
-          });
+          .update(updateData);
 
       showLottieToast(
         context: context,
@@ -321,9 +364,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               const SizedBox(height: 16),
               _buildTextField(
-                controller: _addressController,
-                label: 'Alamat',
-                icon: Icons.home_outlined,
+                controller: _indukNumberController,
+                label: 'Nomor Induk',
+                hintText: 'Contoh: 123456789',
+                icon: Icons.badge_outlined,
                 validator:
                     (val) =>
                         val == null || val.trim().isEmpty
@@ -332,8 +376,54 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               const SizedBox(height: 16),
               _buildTextField(
+                controller: _addressController,
+                label: 'Alamat',
+                hintText: 'Contoh: Jl. Raya No. 123',
+                icon: Icons.home_outlined,
+                validator:
+                    (val) =>
+                        val == null || val.trim().isEmpty
+                            ? 'Wajib diisi'
+                            : null,
+              ),
+              const SizedBox(height: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _selectLocationFromMap,
+                    icon: const Icon(Icons.map_outlined),
+                    label: Text(
+                      selectedLocation == null
+                          ? 'Pilih Lokasi rumah di Peta'
+                          : 'Ubah Lokasi',
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  if (selectedLocation != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Lokasi dipilih: (${selectedLocation!.latitude.toStringAsFixed(4)}, ${selectedLocation!.longitude.toStringAsFixed(4)})',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+              _buildTextField(
                 controller: _phoneController,
                 label: 'No. HP',
+                hintText: 'Contoh: 08123456789',
                 icon: Icons.phone_outlined,
                 keyboardType: TextInputType.phone,
                 validator:
@@ -344,8 +434,72 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               const SizedBox(height: 16),
               _buildTextField(
+                controller: _birthPlaceDateController,
+                label: 'Tempat, Tanggal Lahir',
+                hintText: 'Contoh: Jakarta, 1 Januari 2000',
+                icon: Icons.calendar_today_outlined,
+
+                validator:
+                    (val) =>
+                        val == null || val.trim().isEmpty
+                            ? 'Wajib diisi'
+                            : null,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _dateEntryController,
+                label: 'Tahun Masuk',
+                hintText: 'Contoh: 2020',
+                icon: Icons.school_outlined,
+                validator:
+                    (val) =>
+                        val == null || val.trim().isEmpty
+                            ? 'Wajib diisi'
+                            : null,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _graduationYearController,
+                label: 'Tahun Lulus',
+                hintText: 'Contoh: 2025',
+                icon: Icons.school_outlined,
+                validator:
+                    (val) =>
+                        val == null || val.trim().isEmpty
+                            ? 'Wajib diisi'
+                            : null,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _educationController,
+                label: 'Pendidikan',
+                hintText: 'MA/MTs',
+                icon: Icons.book_outlined,
+                validator:
+                    (val) =>
+                        val == null || val.trim().isEmpty
+                            ? 'Wajib diisi'
+                            : null,
+              ),
+
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _parentNameController,
+                label: 'Nama Orang Tua',
+                hintText: 'Nama Ayah/Ibu',
+                icon: Icons.supervised_user_circle,
+                validator:
+                    (val) =>
+                        val == null || val.trim().isEmpty
+                            ? 'Wajib diisi'
+                            : null,
+              ),
+
+              const SizedBox(height: 16),
+              _buildTextField(
                 controller: _jobController,
                 label: 'Pekerjaan',
+                hintText: 'Contoh: Guru, Dokter',
                 icon: Icons.work_outline_rounded,
                 validator:
                     (val) =>
@@ -382,6 +536,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
                 ),
@@ -399,6 +554,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
+    String? hintText,
   }) {
     return TextFormField(
       controller: controller,
@@ -407,6 +563,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       decoration: InputDecoration(
         prefixIcon: Icon(icon),
         labelText: label,
+        hintText: hintText,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         contentPadding: const EdgeInsets.symmetric(
           vertical: 12,

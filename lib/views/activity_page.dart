@@ -23,15 +23,20 @@ class _ActivityPageState extends State<ActivityPage> {
     activitiesFuture = fetchActivities();
   }
 
+  // Mengambil daftar kegiatan dari koleksi 'kegiatan' di Firestore,
+  // diurutkan berdasarkan tanggal terbaru ke terlama.
   Future<List<Activity>> fetchActivities() async {
     final snapshot =
         await FirebaseFirestore.instance
             .collection('kegiatan')
             .orderBy('date', descending: true)
             .get();
+    // Mapping dokumen Firestore ke model Activity
     return snapshot.docs.map((doc) => Activity.fromMap(doc.data())).toList();
   }
 
+  // Melakukan refresh data kegiatan dengan memanggil ulang fetchActivities
+  // dan mengupdate state agar tampilan ter-refresh.
   Future<void> _refreshActivities() async {
     setState(() {
       activitiesFuture = fetchActivities();

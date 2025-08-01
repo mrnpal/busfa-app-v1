@@ -61,6 +61,8 @@ dependencies:
   flutter_local_notifications: ^19.2.1
   lottie: ^3.3.1
   fluttertoast: ^8.2.12
+  feature_discovery: ^0.14.2
+  shared_preferences: ^2.5.3
 
 
   # The following adds the Cupertino Icons font to your application.

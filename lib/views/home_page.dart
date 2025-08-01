@@ -34,6 +34,39 @@ class _HomePageState extends State<HomePage> {
     });
     FCMService.instance.saveTokenToFirestore();
     FCMService.instance.listenToTokenRefresh();
+    // Cek apakah data pengguna sudah lengkap
+    Future.microtask(() async {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final doc =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .get();
+        if (doc.exists) {
+          final data = doc.data() ?? {};
+          // Daftar field yang wajib diisi
+          final requiredFields = [
+            'name',
+            'address',
+            'phone',
+            'job',
+            'graduationYear',
+            'parentName',
+            'dateEntry',
+            'education',
+            'birthPlaceDate',
+            'indukNumber',
+          ];
+          final isIncomplete = requiredFields.any(
+            (f) => (data[f] == null || (data[f] as String).trim().isEmpty),
+          );
+          if (isIncomplete) {
+            _showDataReminderDialog();
+          }
+        }
+      }
+    });
   }
 
   @override
@@ -134,6 +167,64 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _showDataReminderDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF0F4C81),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.white),
+                SizedBox(width: 8),
+                Text(
+                  'Lengkapi Data',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'Hai Alumni, mohon lengkapi data diri Anda sebelum menggunakan aplikasi alumni Busfa.',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Get.toNamed('/edit-profile');
+                },
+                child: Text(
+                  'Isi Sekarang',
+
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(
+                  'Nanti Saja',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -212,7 +303,7 @@ class _HomePageState extends State<HomePage> {
                                 future: _getAlumniCount(),
                                 builder: (context, snapshot) {
                                   return _buildStatCard(
-                                    title: "Total Alumni",
+                                    title: "Total Pengguna",
                                     value:
                                         snapshot.hasData
                                             ? "${snapshot.data}"
