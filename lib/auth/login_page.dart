@@ -83,6 +83,33 @@ class _LoginPageState extends State<LoginPage> {
           onPressed: () => Get.to(WelcomePage()),
           icon: Icon(Icons.arrow_back_ios, size: 20, color: Colors.black),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.support_agent,
+              color: const Color.fromARGB(255, 2, 151, 57),
+            ),
+            tooltip: 'Hubungi Admin',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder:
+                    (context) => AlertDialog(
+                      title: Text('Hubungi Admin'),
+                      content: Text(
+                        'Silakan hubungi admin di:\nWhatsApp: 082320399763\nEmail: busfa@gmail.com',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text('Tutup'),
+                        ),
+                      ],
+                    ),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
