@@ -28,7 +28,7 @@ Future<String> registerAlumni({
     });
 
     // Berhasil, user harus menunggu verifikasi admin
-    return 'Pendaftaran berhasil. Tunggu verifikasi admin.';
+    return 'Pendaftaran berhasil. Tunggu verifikasi admin atau hubungi admin pada pojok kanan atas aplikasi.';
   } on FirebaseAuthException catch (e) {
     // Error dari Firebase Auth (misal email sudah terdaftar)
     return e.message ?? 'Terjadi kesalahan';

@@ -107,7 +107,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
       setState(() => isLoading = false);
 
-      if (result == 'Pendaftaran berhasil. Tunggu verifikasi admin.') {
+      if (result ==
+          'Pendaftaran berhasil. Tunggu verifikasi admin atau hubungi admin pada pojok kanan atas aplikasi.') {
         // Clear form
         emailController.clear();
         passwordController.clear();
